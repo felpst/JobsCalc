@@ -1,0 +1,13 @@
+const express = require("express")
+const server = express()
+const routes = require("./routes") // Isto está pegando as rotas que estão no arquvio routes.js
+
+// Usando template envie (ou view engine)
+server.set('view engine', 'ejs') // Isto daqui é o motor que fará a leitura do código html. Estou usando o padrão de interpretação ejs, que me possibilita colocar código JS dentro do HTML
+
+server.use(express.static("public")) // O use serve para você criar configurações ao seu servidor. Neste caso ele está sendo usado para ditar como o servidor deve fazer as rotas (usando os arquivos do diretório público). Este use crie um Midware (O que é isso?)
+
+// Routes
+server.use(routes) // Aqui o servidor está usando as rodas pegas acima do arquivo routes.js
+
+server.listen(3000, () => console.log('rodando')) 
