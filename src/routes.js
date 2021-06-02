@@ -3,34 +3,103 @@ const routes = express.Router() // Router serve para criar os caminhos
 
 const views = __dirname + '/views/' //dirname da o endereço absoluto do server.js, e o + concatena com o endereço do views. Renomiei a variável de basePath para views, para conter a rota para a pasta views que será usada pelo engine do ejs.
 
-const profile = {
-    name: "Felps",
-    avatar: "https://www.github.com/felpst.png",
-    "monthly-budget": 3000,
-    "days-per-week": 5,
-    "hours-per-day": 5,
-    "vacation-per-year": 4
+const Profile = {
+    data: {
+        name: "Felps",
+        avatar: "https://www.github.com/felpst.png",
+        "monthly-budget": 3000,
+        "days-per-week": 5,
+        "hours-per-day": 5,
+        "vacation-per-year": 4,
+        "value-hour": 75
+    },
+    controllers: {
+        index(req, res) {
+            return res.render(views + "profile", { profile: Profile.data})
+        },
+        update(req, res) {
+            // A fazer, 3:12
+        },
+    }
 }
 
-const jobs = []
+const Job = { // Isto aqui é um Object Literal do Jobs
+    data: [
+        {
+            id: 1,
+            name: "Batata",
+            "daily-hours": 2,
+            "total-hours": 60,
+            created_at: Date.now(),
+        },
+        {
+            id: 2,
+            name: "Xuxu",
+            "daily-hours": 3,
+            "total-hours": 47,
+            created_at: Date.now(), 
+        },
+    ],
+    controllers: {
+        index(req, res) {
+            const updatedJobs = Job.data.map((job) =>{
+                // ajustes no jobs
+                const remaining = Job.services.remainingDays(job)
+                const status = remaining <= 0 ? 'done' : 'progress'
+        
+                return {
+                    ...job, // Isso aqui é o espalhamento, estou pegando tudo dentro do job e colocando aqui dentro
+                    remaining,
+                    status,
+                    budget: Profile.data["value-hour"] * job["total-hours"]
+                }
+            }) // Isso funciona como o forEach (vai loopar dentro de todos os job dentro de jobs), só que vai retornar (consegue dar o return enquanto o forEach não) uma nova array no final do processo
+        
+            return res.render(views + "index", { jobs: updatedJobs })
+        },
+        create(req, res) {
+            return res.render(views + "job")
+        },
+        save(req, res) {
+            // req.body = {name: 'something', 'daily-hours': '3.1', 'total-hours': '3'}
+            const lastId = Job.data[Job.data.length - 1]?.id || 1; // Caso ache a primeira parte, então pegar o id, mas se não achar então devolver 1.
+
+            Job.data.push({
+                id: lastId + 1, // id deste elemente é a id do anteiror a este + 1.
+                name: req.body.name,
+                "daily-hours": req.body["daily-hours"],
+                "total-hours": req.body["total-hours"],
+                created_at: Date.now() // Atribuindo a data de hoje
+            })
+            return res.redirect('/') // Estou redirecionando para o / que é o index
+        },
+    },
+    services: {
+        remainingDays(job) {
+            // calculo de tempo restante
+            const remainingDays = (job["total-hours"] / job["daily-hours"]).toFixed()
+        
+            const createdDate = new Date(job.created_at)
+            const dueDay = createdDate.getDate() + Number(remainingDays) // getDate retorna o dia do mês, enquanto getDay retorna o dia da semana.
+            const dueDateInMs = createdDate.setDate(dueDay) // setDate é uma funçao que pega uma data.
+        
+            const timeDiffInMs = dueDateInMs - Date.now()
+            // transformar ms em dias
+            const dayInMs = 1000 * 60 * 60 * 24
+            const dayDiff = Math.floor(timeDiffInMs / dayInMs) // Arredondando para baixo
+        
+            return dayDiff
+        }
+    }
+}
+
 
 // req, res. Toda vez que o server pegar (get) uma / ele vai executar a função que tem os parâmetros req (qual é o pedido do usuário) e reponse (qual a resposta dada pelo servidor).
-routes.get('/', (req, res) => res.render(views + "index")) 
-routes.get('/job', (req, res) => res.render(views + "job"))
-routes.get('/job', (req, res) => {
-    // req.body = {name: 'something', 'daily-hours': '3.1', 'total-hours': '3'}
-
-    const job = req.body
-    job.createdAt = Date.now(); // Atribuindo uma nova data
-
-    jobs.push({
-        name: req.body.name,
-        "daily-hours": req.body["daily-hours"],
-        "total-hours": req.body["total-hours"],
-    })
-    return res.redirect('/') // Estou redirecionando para o / que é o index
-})
+routes.get('/', Job.controllers.index) 
+routes.get('/job',Job.controllers.create)
+routes.post('/job', Job.controllers.save)
 routes.get('/job/edit', (req, res) => res.render(views + "job-edit"))
-routes.get('/profile', (req, res) => res.render(views + "profile", { profile}))
+routes.get('/profile', Profile.controllers.index) // Depois que eu pego a rota de uma file, eu posso passar para ela um objeto como segundo argumento.
+routes.post('/profile', Profile.controllers.update)
 
 module.exports = routes; // Isto aqui está exportando as rotas para fora deste arquivo.
