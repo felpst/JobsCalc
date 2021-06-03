@@ -18,7 +18,31 @@ const Profile = {
             return res.render(views + "profile", { profile: Profile.data})
         },
         update(req, res) {
-            // A fazer, 3:12
+            // re.body para pegar os dados
+            const data = req.body
+
+            // definir quantas semanas tem em um ano: 52
+            const weeksPerYear = 52
+
+            // remover as semanas de férias do ano, para pegar quantas semanas tem em um mês
+            const weeksWorkingPerMonth = (weeksPerYear - data["vacation-per-year"])/12
+
+            // quantas horas por semana estou trabalhando
+            const hoursWorkingPerWeek = data["hours-per-day"] * data["days-per-week"]
+
+            // total de horas trabalhadas no mês
+            const monthlyWorkedHours = hoursWorkingPerWeek * weeksWorkingPerMonth
+
+            // Qual será o valor da minha hora
+            const valueHour = data["value-hour"] = data["monthly-budget"] / monthlyWorkedHours
+
+            Profile.data = {
+                ...Profile.data,
+                ...req.body,
+                "value-hour": valueHour,
+            }
+
+            return res.redirect('/profile')
         },
     }
 }
@@ -51,7 +75,7 @@ const Job = { // Isto aqui é um Object Literal do Jobs
                     ...job, // Isso aqui é o espalhamento, estou pegando tudo dentro do job e colocando aqui dentro
                     remaining,
                     status,
-                    budget: Profile.data["value-hour"] * job["total-hours"]
+                    budget: Job.services.calculateBudget(job, Profile.data["value-hour"])
                 }
             }) // Isso funciona como o forEach (vai loopar dentro de todos os job dentro de jobs), só que vai retornar (consegue dar o return enquanto o forEach não) uma nova array no final do processo
         
@@ -62,7 +86,7 @@ const Job = { // Isto aqui é um Object Literal do Jobs
         },
         save(req, res) {
             // req.body = {name: 'something', 'daily-hours': '3.1', 'total-hours': '3'}
-            const lastId = Job.data[Job.data.length - 1]?.id || 1; // Caso ache a primeira parte, então pegar o id, mas se não achar então devolver 1.
+            const lastId = Job.data[Job.data.length - 1]?.id || 0; // Caso ache a primeira parte, então pegar o id, mas se não achar então devolver 0.
 
             Job.data.push({
                 id: lastId + 1, // id deste elemente é a id do anteiror a este + 1.
@@ -73,6 +97,51 @@ const Job = { // Isto aqui é um Object Literal do Jobs
             })
             return res.redirect('/') // Estou redirecionando para o / que é o index
         },
+        show(req, res) {
+            
+            const jobId = req.params.id // aqui eu estou pegando os parametros que eu estou mandando. Como?
+
+            const job = Job.data.find(job => Number(job.id) === Number(jobId)) // Vai loopar por todos os jobs e quando achar um que faça função que está sendo passada retornar verdadeiro, então ele vai atribuir a variável job o objeto que achou.
+            if(!job) {
+                return res.render('Job not found!')
+            }
+
+            job.budget = Job.services.calculateBudget(job, Profile.data["value-hour"])
+
+            return res.render(views + "job-edit", { job })
+        },
+        update(req, res) {
+            const jobId = req.params.id // aqui eu estou pegando os parametros que eu estou mandando. Como?
+
+            const job = Job.data.find(job => Number(job.id) === Number(jobId)) // Vai loopar por todos os jobs e quando achar um que faça função que está sendo passada retornar verdadeiro, então ele vai atribuir a variável job o objeto que achou.
+            if(!job) {
+                return res.render('Job not found!')
+            }
+            
+            const updatedJob = {
+                ...job,
+                name: req.body.name,
+                "total-hours": req.body["total-hours"],
+                "daily-hours": req.body["daily-hours"],
+            }
+
+            Job.data = Job.data.map(job => {
+                if (Number(job.id) === Number(jobId)) {
+                    job = updatedJob
+                }
+
+                return job
+            })
+
+            res.redirect('/job/' + jobId)
+        },
+        delete(req, res) {
+            const jobId = req.params.id
+
+            Job.data = Job.data.filter(job => Number(job.id) !== Number(jobId)) // Vai loopar por todos os elementos dentro da array,e vai retornar tudo que manter a função verdadeira, deixando os elementos que não manterem de fora. 
+
+            return res.redirect('/')
+        }
     },
     services: {
         remainingDays(job) {
@@ -89,7 +158,8 @@ const Job = { // Isto aqui é um Object Literal do Jobs
             const dayDiff = Math.floor(timeDiffInMs / dayInMs) // Arredondando para baixo
         
             return dayDiff
-        }
+        },
+        calculateBudget: (job, valueHour) => valueHour * job["total-hours"]
     }
 }
 
@@ -98,7 +168,9 @@ const Job = { // Isto aqui é um Object Literal do Jobs
 routes.get('/', Job.controllers.index) 
 routes.get('/job',Job.controllers.create)
 routes.post('/job', Job.controllers.save)
-routes.get('/job/edit', (req, res) => res.render(views + "job-edit"))
+routes.get('/job/:id', Job.controllers.show) // De alguma forma eu to passando o id de um job desta forma. Como isto funciona?
+routes.post('/job/:id', Job.controllers.update)
+routes.post('/job/delete/:id', Job.controllers.delete)
 routes.get('/profile', Profile.controllers.index) // Depois que eu pego a rota de uma file, eu posso passar para ela um objeto como segundo argumento.
 routes.post('/profile', Profile.controllers.update)
 
