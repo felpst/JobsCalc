@@ -1,51 +1,11 @@
 const express = require('express'); // Express é uma bibliotéca para criar o servidor
 const routes = express.Router() // Router serve para criar os caminhos
+const ProfileController = require('./controllers/ProfileController')
+const Profile = require('./model/Profile')
 
-const views = __dirname + '/views/' //dirname da o endereço absoluto do server.js, e o + concatena com o endereço do views. Renomiei a variável de basePath para views, para conter a rota para a pasta views que será usada pelo engine do ejs.
+// const views = __dirname + '/views/' //dirname da o endereço absoluto do server.js, e o + concatena com o endereço do views. Renomiei a variável de basePath para views, para conter a rota para a pasta views que será usada pelo engine do ejs.
 
-const Profile = {
-    data: {
-        name: "Felps",
-        avatar: "https://www.github.com/felpst.png",
-        "monthly-budget": 3000,
-        "days-per-week": 5,
-        "hours-per-day": 5,
-        "vacation-per-year": 4,
-        "value-hour": 75
-    },
-    controllers: {
-        index(req, res) {
-            return res.render(views + "profile", { profile: Profile.data})
-        },
-        update(req, res) {
-            // re.body para pegar os dados
-            const data = req.body
-
-            // definir quantas semanas tem em um ano: 52
-            const weeksPerYear = 52
-
-            // remover as semanas de férias do ano, para pegar quantas semanas tem em um mês
-            const weeksWorkingPerMonth = (weeksPerYear - data["vacation-per-year"])/12
-
-            // quantas horas por semana estou trabalhando
-            const hoursWorkingPerWeek = data["hours-per-day"] * data["days-per-week"]
-
-            // total de horas trabalhadas no mês
-            const monthlyWorkedHours = hoursWorkingPerWeek * weeksWorkingPerMonth
-
-            // Qual será o valor da minha hora
-            const valueHour = data["value-hour"] = data["monthly-budget"] / monthlyWorkedHours
-
-            Profile.data = {
-                ...Profile.data,
-                ...req.body,
-                "value-hour": valueHour,
-            }
-
-            return res.redirect('/profile')
-        },
-    }
-}
+// Parei no 52:26
 
 const Job = { // Isto aqui é um Object Literal do Jobs
     data: [
@@ -75,14 +35,14 @@ const Job = { // Isto aqui é um Object Literal do Jobs
                     ...job, // Isso aqui é o espalhamento, estou pegando tudo dentro do job e colocando aqui dentro
                     remaining,
                     status,
-                    budget: Job.services.calculateBudget(job, Profile.data["value-hour"])
+                    budget: Job.services.calculateBudget(job, Profile.get()["value-hour"])
                 }
             }) // Isso funciona como o forEach (vai loopar dentro de todos os job dentro de jobs), só que vai retornar (consegue dar o return enquanto o forEach não) uma nova array no final do processo
         
-            return res.render(views + "index", { jobs: updatedJobs })
+            return res.render("index", { jobs: updatedJobs })
         },
         create(req, res) {
-            return res.render(views + "job")
+            return res.render("job")
         },
         save(req, res) {
             // req.body = {name: 'something', 'daily-hours': '3.1', 'total-hours': '3'}
@@ -106,9 +66,9 @@ const Job = { // Isto aqui é um Object Literal do Jobs
                 return res.render('Job not found!')
             }
 
-            job.budget = Job.services.calculateBudget(job, Profile.data["value-hour"])
+            job.budget = Job.services.calculateBudget(job, Profile.get()["value-hour"])
 
-            return res.render(views + "job-edit", { job })
+            return res.render("job-edit", { job })
         },
         update(req, res) {
             const jobId = req.params.id // aqui eu estou pegando os parametros que eu estou mandando. Como?
@@ -171,7 +131,7 @@ routes.post('/job', Job.controllers.save)
 routes.get('/job/:id', Job.controllers.show) // De alguma forma eu to passando o id de um job desta forma. Como isto funciona?
 routes.post('/job/:id', Job.controllers.update)
 routes.post('/job/delete/:id', Job.controllers.delete)
-routes.get('/profile', Profile.controllers.index) // Depois que eu pego a rota de uma file, eu posso passar para ela um objeto como segundo argumento.
-routes.post('/profile', Profile.controllers.update)
+routes.get('/profile', ProfileController.index) // Depois que eu pego a rota de uma file, eu posso passar para ela um objeto como segundo argumento.
+routes.post('/profile', ProfileController.update)
 
 module.exports = routes; // Isto aqui está exportando as rotas para fora deste arquivo.
