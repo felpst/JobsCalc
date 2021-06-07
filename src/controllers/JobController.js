@@ -12,13 +12,14 @@ module.exports = {
         // req.body = {name: 'something', 'daily-hours': '3.1', 'total-hours': '3'}
         const lastId = jobs[jobs.length - 1]?.id || 0; // Caso ache a primeira parte, então pegar o id, mas se não achar então devolver 0.
 
-        jobs.push({
+        Job.create({
             id: lastId + 1, // id deste elemente é a id do anteiror a este + 1.
             name: req.body.name,
             "daily-hours": req.body["daily-hours"],
             "total-hours": req.body["total-hours"],
             created_at: Date.now() // Atribuindo a data de hoje
-        })
+        });
+        
         return res.redirect('/') // Estou redirecionando para o / que é o index
     },
 
