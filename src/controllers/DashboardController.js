@@ -42,5 +42,3 @@ module.exports = {
         return res.render("index", { jobs: updatedJobs, profile: profile, status: statusCounter, freeHours: freeHours })
     },
 };
-
-// Parei nos 3:07:28
