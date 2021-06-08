@@ -7,8 +7,8 @@ module.exports = {
         return res.render("job")
     },
 
-    save(req, res) {
-        const jobs = Job.get()
+    async save(req, res) {
+        const jobs = await Job.get()
         // req.body = {name: 'something', 'daily-hours': '3.1', 'total-hours': '3'}
         const lastId = jobs[jobs.length - 1]?.id || 0; // Caso ache a primeira parte, então pegar o id, mas se não achar então devolver 0.
 
@@ -23,9 +23,9 @@ module.exports = {
         return res.redirect('/') // Estou redirecionando para o / que é o index
     },
 
-    show(req, res) {
-        const jobs = Job.get()
-        const profile = Profile.get()
+    async show(req, res) {
+        const jobs = await Job.get()
+        const profile = await Profile.get()
 
         const jobId = req.params.id // aqui eu estou pegando os parametros que eu estou mandando.
 
@@ -39,8 +39,8 @@ module.exports = {
         return res.render("job-edit", { job })
     },
 
-    update(req, res) {
-        jobs = Job.get()
+    async update(req, res) {
+        jobs = await Job.get()
 
         const jobId = req.params.id // aqui eu estou pegando os parametros que eu estou mandando. Como?
 

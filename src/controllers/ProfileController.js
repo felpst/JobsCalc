@@ -1,10 +1,10 @@
 const Profile = require('../model/Profile')
 
 module.exports = { // O exports faz que tudo dentro seja exportável.
-    index(req, res) {
-        return res.render("profile", { profile: Profile.get()}) // Antes aqui estava com Profile.data. Essa mundanca foi feita pensando na organização e aplicação futura.
+    async index(req, res) {
+        return res.render("profile", { profile: await Profile.get()}) // Antes aqui estava com Profile.data. Essa mundanca foi feita pensando na organização e aplicação futura.
     },
-    update(req, res) {
+    async update(req, res) {
         // re.body para pegar os dados da requisição
         const data = req.body
 
@@ -23,8 +23,10 @@ module.exports = { // O exports faz que tudo dentro seja exportável.
         // Qual será o valor da minha hora
         const valueHour = data["value-hour"] = data["monthly-budget"] / monthlyWorkedHours
 
-        Profile.update({ // Aqui antes ficava Profile.data
-            ...Profile.get(), // Spread (...), aqui antes era Profile.data
+        const profile = await Profile.get()
+
+        await Profile.update({ // Aqui antes ficava Profile.data
+            ...profile, // Spread (...), aqui antes era Profile.data
             ...req.body,
             "value-hour": valueHour
         })

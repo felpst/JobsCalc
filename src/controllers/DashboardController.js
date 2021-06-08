@@ -3,9 +3,9 @@ const JobUtils = require('../utils/JobUtils')
 const Profile = require('../model/Profile')
 
 module.exports = {
-    index(req, res) {
-        const jobs = Job.get(); // O jobs e a porifle são variaveis que eu estou criando aqui, não importando, e por isso elas começam com uma letra minúscula.
-        const profile = Profile.get();
+    async index(req, res) {
+        const jobs = await Job.get(); // O jobs e a porifle são variaveis que eu estou criando aqui, não importando, e por isso elas começam com uma letra minúscula.
+        const profile = await Profile.get();
 
         let statusCounter = {
             progress: 0,
