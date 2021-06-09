@@ -2,6 +2,8 @@ const Job = require('../model/Job')
 const JobUtils = require('../utils/JobUtils')
 const Profile = require('../model/Profile')
 
+// Parei no 3:37:13
+
 module.exports = {
     async index(req, res) {
         const jobs = await Job.get(); // O jobs e a porifle são variaveis que eu estou criando aqui, não importando, e por isso elas começam com uma letra minúscula.
